@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,6 +44,16 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
   const [selectedProductKey, setSelectedProductKey] = useState<string>("")
   const [selectedMetrics, setSelectedMetrics] = useState<DailyMetricKey[]>(["revenue"])
   const [granularity, setGranularity] = useState<"daily" | "weekly">("daily")
+  const [showGif, setShowGif] = useState(true)
+
+  // Nach 10 Sekunden das GIF durch statisches Bild ersetzen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowGif(false)
+    }, 10000) // 10 Sekunden
+
+    return () => clearTimeout(timer)
+  }, [])
   
   // Datumsbereich für Graph (letzte 30 Tage als Standard)
   // Verwende Berliner Zeitzone für korrekte Datumsberechnung
@@ -252,7 +262,7 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
         {/* Überschrift */}
         <div className="flex items-center justify-center gap-3">
           <Image
-            src="/coffee_parrot.gif"
+            src={showGif ? "/coffee_parrot.gif" : "/coffee_parrot_static.png"}
             alt="Coffee Parrot"
             width={48}
             height={48}
