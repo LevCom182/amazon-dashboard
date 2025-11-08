@@ -46,11 +46,11 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
   const [granularity, setGranularity] = useState<"daily" | "weekly">("daily")
   const [showGif, setShowGif] = useState(true)
 
-  // Nach 10 Sekunden das GIF durch statisches Bild ersetzen
+  // Nach 5 Sekunden das GIF durch statisches Bild ersetzen
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowGif(false)
-    }, 10000) // 10 Sekunden
+    }, 5000) // 5 Sekunden
 
     return () => clearTimeout(timer)
   }, [])
