@@ -250,7 +250,7 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10">
         {/* Überschrift */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">LevCom Performance Snapshot</h1>
+          <h1 className="text-3xl font-bold text-foreground">LevCom Daily Snapshot</h1>
         </div>
 
         {/* Header: Dropdowns in Card */}
@@ -325,7 +325,7 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
           <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-4">
-                <CardTitle>Performance</CardTitle>
+                <CardTitle>Performance Last 30 Days</CardTitle>
                 <div className="flex gap-1 rounded-lg border border-border/50 bg-background/50 p-1">
                   <Button
                     size="sm"
