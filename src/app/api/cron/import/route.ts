@@ -103,7 +103,9 @@ export async function GET() {
         sevenDayRange.end
       )
 
-      // Duplikat-Prüfung nur auf die zu importierenden Daten (letzte 7 Tage)
+      // Duplikat-Prüfung NACH dem Löschen und VOR dem Import
+      // Prüft, ob die CSV-Daten selbst Duplikate enthalten (ASIN + Marketplace + Datum)
+      // Vor dem Löschen würde es immer Duplikate geben, da die Daten noch in der DB sind
       checkForDuplicates(recentRangeRecords)
 
       const insertedRecent = await insertRecordsInBatches(
