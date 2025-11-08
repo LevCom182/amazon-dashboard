@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import {
   SELLERBOARD_ACCOUNT_CONFIG,
+  checkForDuplicates,
   fetchSellerboardCsv,
   filterRecordsByDateRange,
   getInclusiveDateRange,
@@ -101,6 +102,9 @@ export async function GET() {
         sevenDayRange.start,
         sevenDayRange.end
       )
+
+      // Duplikat-Prüfung nur auf die zu importierenden Daten (letzte 7 Tage)
+      checkForDuplicates(recentRangeRecords)
 
       const insertedRecent = await insertRecordsInBatches(
         supabase,

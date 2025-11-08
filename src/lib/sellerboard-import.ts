@@ -377,8 +377,6 @@ export function parseSellerboardCsv(csvContent: string): ParseResult {
 
   const records: SellerboardDbRow[] = []
   let skippedRows = 0
-  const duplicateCheck = new Map<string, DuplicateKeyDetails>()
-  const duplicates: DuplicateKeyDetails[] = []
 
   parsed.forEach((row, index) => {
     const mapped: SellerboardDbRow = {
@@ -438,32 +436,8 @@ export function parseSellerboardCsv(csvContent: string): ParseResult {
       return
     }
 
-    const duplicateKey = `${mapped.date}|${mapped.marketplace}|${mapped.asin}`
-    if (!duplicateCheck.has(duplicateKey)) {
-      duplicateCheck.set(duplicateKey, {
-        asin: mapped.asin,
-        marketplace: mapped.marketplace,
-        date: mapped.date,
-        index,
-      })
-    } else {
-      duplicates.push({
-        asin: mapped.asin,
-        marketplace: mapped.marketplace,
-        date: mapped.date,
-        index,
-      })
-    }
-
     records.push(mapped)
   })
-
-  if (duplicates.length > 0) {
-    throw new SellerboardDuplicateError(
-      "Duplikate gefunden (ASIN + Marketplace + Datum müssen eindeutig sein)",
-      duplicates
-    )
-  }
 
   return {
     records,
@@ -534,8 +508,10 @@ export function getInclusiveDateRange(days: number): { start: string; end: strin
   if (days < 1) {
     throw new Error("Days must be at least 1")
   }
-  const end = getBerlinDateNDaysAgo(0)
-  const start = getBerlinDateNDaysAgo(days - 1)
+  // end = gestern (heute ausgeschlossen)
+  const end = getBerlinDateNDaysAgo(1)
+  // start = vor N Tagen (N Tage ab gestern)
+  const start = getBerlinDateNDaysAgo(days)
   return { start, end }
 }
 
@@ -551,6 +527,37 @@ export function filterRecordsByDateRange(
     const current = Date.parse(`${record.date}T00:00:00Z`)
     return !Number.isNaN(current) && current >= startTime && current <= endTime
   })
+}
+
+export function checkForDuplicates(records: SellerboardDbRow[]): void {
+  const duplicateCheck = new Map<string, DuplicateKeyDetails>()
+  const duplicates: DuplicateKeyDetails[] = []
+
+  records.forEach((record, index) => {
+    const duplicateKey = `${record.date}|${record.marketplace}|${record.asin}`
+    if (!duplicateCheck.has(duplicateKey)) {
+      duplicateCheck.set(duplicateKey, {
+        asin: record.asin,
+        marketplace: record.marketplace,
+        date: record.date,
+        index,
+      })
+    } else {
+      duplicates.push({
+        asin: record.asin,
+        marketplace: record.marketplace,
+        date: record.date,
+        index,
+      })
+    }
+  })
+
+  if (duplicates.length > 0) {
+    throw new SellerboardDuplicateError(
+      "Duplikate gefunden (ASIN + Marketplace + Datum müssen eindeutig sein)",
+      duplicates
+    )
+  }
 }
 
 function parseNumber(value: unknown): number {
