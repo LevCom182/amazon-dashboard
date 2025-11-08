@@ -367,9 +367,7 @@ export function parseSellerboardCsv(csvContent: string): ParseResult {
   for (const column of COLUMN_DEFINITIONS) {
     const foundHeader = column.headers.find((candidate) => headers.includes(candidate)) ?? null
     headerMap.set(column.key, foundHeader)
-    if (!foundHeader && column.type !== "string") {
-      missing.add(column.key)
-    }
+    // Nur required-Spalten als fehlend melden
     if (!foundHeader && column.required) {
       missing.add(column.key)
     }
