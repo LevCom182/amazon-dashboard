@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -249,8 +250,16 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
     <div className="flex min-h-screen flex-col bg-black text-foreground">
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10">
         {/* Überschrift */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">LevCom Daily Snapshot</h1>
+        <div className="flex items-center justify-center gap-3">
+          <Image
+            src="/coffee_parrot.gif"
+            alt="Coffee Parrot"
+            width={48}
+            height={48}
+            className="h-9 w-auto"
+            unoptimized
+          />
+          <h1 className="text-3xl font-bold text-foreground">LevCom Performance Cockpit</h1>
         </div>
 
         {/* Header: Dropdowns in Card */}
