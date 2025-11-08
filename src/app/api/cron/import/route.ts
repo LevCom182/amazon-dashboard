@@ -94,13 +94,12 @@ export async function GET() {
 
       accountLog.steps.push(`Gelöschte Zeilen (letzte 7 Tage): ${deletedCount ?? 0}`)
 
+      // Nach dem Löschen werden nur die letzten 7 Tage neu importiert
+      // Die Tage 8-30 bleiben unverändert in der DB
       const recentRangeRecords = filterRecordsByDateRange(
         filteredRecords,
         sevenDayRange.start,
         sevenDayRange.end
-      )
-      const olderRecords = filteredRecords.filter(
-        (record) => record.date < sevenDayRange.start
       )
 
       const insertedRecent = await insertRecordsInBatches(
@@ -112,21 +111,8 @@ export async function GET() {
         `Neu geschriebene Zeilen (letzte 7 Tage): ${insertedRecent.inserted}`
       )
 
-      if (olderRecords.length > 0) {
-        const insertedOlder = await insertRecordsInBatches(
-          supabase,
-          config.table,
-          olderRecords
-        )
-        accountLog.steps.push(
-          `Upserts für Tage 8-30: ${insertedOlder.inserted} erfolgreich`
-        )
-      }
-
       console.log(
-        `[Cron][${account}] Erfolg: ${recentRangeRecords.length} Zeilen für letzte 7 Tage, ${
-          olderRecords.length
-        } Zeilen für Tage 8-30`
+        `[Cron][${account}] Erfolg: ${recentRangeRecords.length} Zeilen für letzte 7 Tage importiert`
       )
 
       summary.push(accountLog)
