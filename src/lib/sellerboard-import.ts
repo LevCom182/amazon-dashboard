@@ -427,8 +427,9 @@ export function parseSellerboardCsv(csvContent: string): ParseResult {
 
       if (column.type === "string") {
         mapped[column.key] = value ? String(value) : ""
-      } else {
-        mapped[column.key] = typeof value === "number" ? value : 0
+      } else if (column.type === "number") {
+        const numericValue = typeof value === "number" ? value : 0
+        ;(mapped as Record<string, number | string | null>)[column.key] = numericValue
       }
     }
 
