@@ -2,12 +2,10 @@ import { NextResponse } from "next/server"
 
 import {
   SELLERBOARD_ACCOUNT_CONFIG,
-  checkForDuplicates,
   fetchSellerboardCsv,
   filterRecordsByDateRange,
   getInclusiveDateRange,
   parseSellerboardCsv,
-  SellerboardDuplicateError,
   type SellerboardDbRow,
 } from "@/lib/sellerboard-import"
 import { getSupabaseServiceClient } from "@/lib/supabaseServer"
@@ -103,11 +101,6 @@ export async function GET() {
         sevenDayRange.end
       )
 
-      // Duplikat-Prüfung NACH dem Löschen und VOR dem Import
-      // Prüft, ob die CSV-Daten selbst Duplikate enthalten (ASIN + Marketplace + Datum)
-      // Vor dem Löschen würde es immer Duplikate geben, da die Daten noch in der DB sind
-      checkForDuplicates(recentRangeRecords)
-
       const insertedRecent = await insertRecordsInBatches(
         supabase,
         config.table,
@@ -126,17 +119,6 @@ export async function GET() {
       const message =
         error instanceof Error ? error.message : "Unbekannter Fehler beim Import"
       accountLog.steps.push(`❌ Fehler: ${message}`)
-
-      if (error instanceof SellerboardDuplicateError) {
-        const duplicateDetails = error.duplicates
-          .slice(0, 5)
-          .map(
-            (duplicate) =>
-              `ASIN=${duplicate.asin}, Marketplace=${duplicate.marketplace}, Datum=${duplicate.date}, Index=${duplicate.index}`
-          )
-          .join(" | ")
-        accountLog.steps.push(`Duplikate: ${duplicateDetails}`)
-      }
 
       console.error(`[Cron][${account}] Import fehlgeschlagen`, error)
       summary.push(accountLog)
