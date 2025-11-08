@@ -48,7 +48,7 @@ function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-black p-4">
       <Card className="w-full max-w-md bg-card/60">
         <CardHeader>
-          <CardTitle className="text-2xl">LevCom Performance Cockpit</CardTitle>
+          <CardTitle className="text-2xl">LevCom Daily Snapshot</CardTitle>
           <CardDescription>Bitte geben Sie das Passwort ein</CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,7 +92,7 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-black p-4">
         <Card className="w-full max-w-md bg-card/60">
           <CardHeader>
-            <CardTitle className="text-2xl">LevCom Performance Cockpit</CardTitle>
+            <CardTitle className="text-2xl">LevCom Daily Snapshot</CardTitle>
             <CardDescription>Lädt...</CardDescription>
           </CardHeader>
         </Card>

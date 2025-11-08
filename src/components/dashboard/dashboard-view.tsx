@@ -269,7 +269,7 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
             className="h-9 w-auto"
             unoptimized
           />
-          <h1 className="text-3xl font-bold text-foreground">LevCom Performance Cockpit</h1>
+          <h1 className="text-3xl font-bold text-foreground">LevCom Daily Snapshot</h1>
         </div>
 
         {/* Header: Dropdowns in Card */}
