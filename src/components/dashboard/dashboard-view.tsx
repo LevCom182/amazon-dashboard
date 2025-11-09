@@ -141,10 +141,10 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
     return buildDailySeries(filteredRecords)
   }, [filteredRecords, granularity])
   
-  // Letzte 4 Tage extrahieren basierend auf Berliner Zeit
-  // "Gestern", "Vorgestern", "Vor 2 Tagen", "Vor 3 Tagen"
+  // Letzte 3 Tage + aktueller Monat extrahieren basierend auf Berliner Zeit
+  // "Gestern", "Vorgestern", "Vor 2 Tagen", "Aktueller Monat"
   // Verwendet immer tägliche Daten, unabhängig von der Diagramm-Granularität
-  const lastFourDays = useMemo(() => {
+  const lastThreeDays = useMemo(() => {
     const todayInBerlin = getTodayInBerlin()
     const yesterday = new Date(todayInBerlin)
     yesterday.setDate(todayInBerlin.getDate() - 1)
@@ -152,8 +152,6 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
     dayBeforeYesterday.setDate(todayInBerlin.getDate() - 2)
     const threeDaysAgo = new Date(todayInBerlin)
     threeDaysAgo.setDate(todayInBerlin.getDate() - 3)
-    const fourDaysAgo = new Date(todayInBerlin)
-    fourDaysAgo.setDate(todayInBerlin.getDate() - 4)
     
     // Erstelle Map für schnellen Zugriff (verwendet immer tägliche Daten)
     const dailyMap = new Map(dailySeriesForTiles.map(point => [point.date, point]))
@@ -169,10 +167,9 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
     const yesterdayKey = formatDateKey(yesterday)
     const dayBeforeYesterdayKey = formatDateKey(dayBeforeYesterday)
     const threeDaysAgoKey = formatDateKey(threeDaysAgo)
-    const fourDaysAgoKey = formatDateKey(fourDaysAgo)
     
-    // Hole Daten für die letzten 4 Tage, falls vorhanden
-    // Reihenfolge: Gestern, Vorgestern, Vor 2 Tagen, Vor 3 Tagen
+    // Hole Daten für die letzten 3 Tage, falls vorhanden
+    // Reihenfolge: Gestern, Vorgestern, Vor 2 Tagen
     const createEmptyPoint = (date: Date): typeof dailySeriesForTiles[0] => ({
       date: formatDateKey(date),
       revenue: 0,
@@ -189,10 +186,67 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
       dailyMap.get(yesterdayKey) || createEmptyPoint(yesterday),
       dailyMap.get(dayBeforeYesterdayKey) || createEmptyPoint(dayBeforeYesterday),
       dailyMap.get(threeDaysAgoKey) || createEmptyPoint(threeDaysAgo),
-      dailyMap.get(fourDaysAgoKey) || createEmptyPoint(fourDaysAgo),
     ]
     
     return result
+  }, [dailySeriesForTiles])
+
+  // Aktueller Monat aggregiert (vom 1. des Monats bis gestern)
+  const currentMonthData = useMemo(() => {
+    const todayInBerlin = getTodayInBerlin()
+    const yesterday = new Date(todayInBerlin)
+    yesterday.setDate(todayInBerlin.getDate() - 1)
+    
+    // Erster Tag des aktuellen Monats
+    const firstDayOfMonth = new Date(todayInBerlin.getFullYear(), todayInBerlin.getMonth(), 1)
+    
+    // Format Date zu YYYY-MM-DD
+    const formatDateKey = (date: Date): string => {
+      const year = date.getFullYear()
+      const month = `${date.getMonth() + 1}`.padStart(2, "0")
+      const day = `${date.getDate()}`.padStart(2, "0")
+      return `${year}-${month}-${day}`
+    }
+    
+    const firstDayKey = formatDateKey(firstDayOfMonth)
+    const yesterdayKey = formatDateKey(yesterday)
+    
+    // Aggregiere alle Tage vom 1. des Monats bis gestern
+    const aggregated: typeof dailySeriesForTiles[0] = {
+      date: firstDayKey, // Verwende ersten Tag des Monats als Datum
+      revenue: 0,
+      units: 0,
+      refunds: 0,
+      refundValue: 0,
+      ppcSpend: 0,
+      tacos: 0,
+      margin: 0,
+      netProfit: 0,
+    }
+    
+    // Durchlaufe alle Tage im Monat bis gestern
+    const currentDate = new Date(firstDayOfMonth)
+    while (currentDate <= yesterday) {
+      const dateKey = formatDateKey(currentDate)
+      const dayData = dailySeriesForTiles.find(point => point.date === dateKey)
+      
+      if (dayData) {
+        aggregated.revenue += dayData.revenue
+        aggregated.units += dayData.units
+        aggregated.refunds += dayData.refunds
+        aggregated.refundValue += dayData.refundValue
+        aggregated.ppcSpend += dayData.ppcSpend
+        aggregated.netProfit += dayData.netProfit
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+    
+    // Berechne TACOS und Marge für aggregierte Daten
+    aggregated.tacos = aggregated.revenue > 0 ? aggregated.ppcSpend / aggregated.revenue : 0
+    aggregated.margin = aggregated.revenue > 0 ? aggregated.netProfit / aggregated.revenue : 0
+    
+    return aggregated
   }, [dailySeriesForTiles])
   
   // Gefilterte Serie basierend auf Datumsbereich und Granularität
@@ -308,10 +362,10 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
           </CardContent>
         </Card>
 
-        {/* 4-Tage-Kacheln: Gestern, Vorgestern, Vor 2 Tagen, Vor 3 Tagen */}
+        {/* 4 Kacheln: Gestern, Vorgestern, Vor 2 Tagen, Aktueller Monat */}
         <section className="grid gap-4 md:grid-cols-4">
-          {lastFourDays.map((dayData, index) => {
-            const dayLabels = ["Gestern", "Vorgestern", "Vor 2 Tagen", "Vor 3 Tagen"]
+          {lastThreeDays.map((dayData, index) => {
+            const dayLabels = ["Gestern", "Vorgestern", "Vor 2 Tagen"]
             const dayLabel = dayLabels[index] || `Tag ${index + 1}`
             return (
               <Card key={dayData.date} className="bg-card/60">
@@ -330,10 +384,27 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
               </Card>
             )
           })}
-          {lastFourDays.length === 0 && (
+          {/* Aktueller Monat Kachel */}
+          <Card key="current-month" className="bg-card/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold">Aktueller Monat</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {format(new Date(currentMonthData.date + "T00:00:00"), "MMMM yyyy", { locale: de })}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <DayMetricRow label="Umsatz" value={formatCurrency(currentMonthData.revenue)} />
+              <DayMetricRow label="Units" value={formatNumber(currentMonthData.units)} />
+              <DayMetricRow label="PPC Spend" value={formatCurrency(currentMonthData.ppcSpend)} />
+              <DayMetricRow label="TACOS" value={formatPercent(currentMonthData.tacos)} />
+              <DayMetricRow label="Marge" value={formatPercent(currentMonthData.margin)} />
+              <DayMetricRow label="Profit" value={formatCurrency(currentMonthData.netProfit)} />
+            </CardContent>
+          </Card>
+          {lastThreeDays.length === 0 && (
             <Card className="bg-card/60 md:col-span-4">
               <CardContent className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                Keine Daten für die letzten 4 Tage vorhanden.
+                Keine Daten vorhanden.
               </CardContent>
             </Card>
           )}
