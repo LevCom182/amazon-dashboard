@@ -1,7 +1,6 @@
 "use client"
 
-import Image from "next/image"
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,16 +43,6 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
   const [selectedProductKey, setSelectedProductKey] = useState<string>("")
   const [selectedMetrics, setSelectedMetrics] = useState<DailyMetricKey[]>(["revenue"])
   const [granularity, setGranularity] = useState<"daily" | "weekly">("daily")
-  const [showGif, setShowGif] = useState(true)
-
-  // Nach 5 Sekunden das GIF durch statisches Bild ersetzen
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowGif(false)
-    }, 5000) // 5 Sekunden
-
-    return () => clearTimeout(timer)
-  }, [])
   
   // Datumsbereich für Graph (letzte 30 Tage als Standard)
   // Verwende Berliner Zeitzone für korrekte Datumsberechnung
@@ -315,14 +304,6 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10">
         {/* Überschrift */}
         <div className="flex items-center justify-center gap-3">
-          <Image
-            src={showGif ? "/coffee_parrot.gif" : "/coffee_parrot_static.png"}
-            alt="Coffee Parrot"
-            width={48}
-            height={48}
-            className="h-9 w-auto"
-            unoptimized
-          />
           <h1 className="text-3xl font-bold text-foreground">LevCom Daily Snapshot</h1>
         </div>
 
