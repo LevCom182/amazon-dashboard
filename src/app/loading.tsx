@@ -7,9 +7,9 @@ export default function Loading() {
         <Image
           src="/coffee_parrot.gif"
           alt="Coffee Parrot"
-          width={45}
-          height={45}
-          className="h-11 w-auto"
+          width={36}
+          height={36}
+          className="h-9 w-auto"
           unoptimized
         />
         <p className="text-lg font-medium text-muted-foreground">Lade Dashboard...</p>
