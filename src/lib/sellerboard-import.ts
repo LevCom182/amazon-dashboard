@@ -495,6 +495,12 @@ export function formatDateKey(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+export function getBerlinToday(): string {
+  const date = getBerlinNow()
+  date.setHours(0, 0, 0, 0)
+  return formatDateKey(date)
+}
+
 export function getBerlinDateNDaysAgo(days: number): string {
   const date = getBerlinNow()
   date.setHours(0, 0, 0, 0)

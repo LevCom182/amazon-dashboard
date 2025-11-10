@@ -4,6 +4,7 @@ import {
   SELLERBOARD_ACCOUNT_CONFIG,
   fetchSellerboardCsv,
   filterRecordsByDateRange,
+  getBerlinToday,
   getInclusiveDateRange,
   parseSellerboardCsv,
   type SellerboardDbRow,
@@ -27,6 +28,44 @@ export async function GET() {
   console.log(`[Cron] Sellerboard Import gestartet um ${startedAt}`)
 
   const supabase = getSupabaseServiceClient()
+  const today = getBerlinToday()
+
+  // Prüfe vorab, ob für heute bereits Daten vorhanden sind
+  let hasDataForToday = false
+  for (const account of ACCOUNTS) {
+    const config = SELLERBOARD_ACCOUNT_CONFIG[account]
+    if (!config) continue
+
+    const { data, error } = await (supabase as any)
+      .from(config.table)
+      .select("date")
+      .eq("date", today)
+      .limit(1)
+
+    if (error) {
+      console.warn(`[Cron][${account}] Fehler beim Prüfen auf heutige Daten: ${error.message}`)
+      // Bei Fehler weiterlaufen lassen, um nicht zu blockieren
+      continue
+    }
+
+    if (data && data.length > 0) {
+      hasDataForToday = true
+      console.log(`[Cron][${account}] Daten für heute (${today}) bereits vorhanden`)
+      break
+    }
+  }
+
+  if (hasDataForToday) {
+    console.log(`[Cron] Import übersprungen: Daten für heute (${today}) bereits vorhanden`)
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      reason: `Daten für heute (${today}) bereits vorhanden`,
+      startedAt,
+      finishedAt: new Date().toISOString(),
+    })
+  }
+
   const sevenDayRange = getInclusiveDateRange(7)
   const thirtyDayRange = getInclusiveDateRange(30)
 
