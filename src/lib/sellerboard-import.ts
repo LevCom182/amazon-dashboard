@@ -1,4 +1,5 @@
 import { parse } from "csv-parse/sync"
+import * as yauzl from "yauzl"
 
 import type { AccountId } from "./types"
 
@@ -333,6 +334,90 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: "roi", headers: ["ROI"], type: "number" },
 ]
 
+async function extractCsvFromZip(buffer: Buffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    yauzl.fromBuffer(buffer, { lazyEntries: true }, (err, zipfile) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      if (!zipfile) {
+        reject(new Error("ZIP-Datei konnte nicht geöffnet werden"))
+        return
+      }
+
+      const csvContents: string[] = []
+      const csvPromises: Promise<void>[] = []
+      let entryCount = 0
+      let csvCount = 0
+
+      zipfile.on("entry", (entry) => {
+        entryCount++
+        if (/\.csv$/i.test(entry.fileName)) {
+          csvCount++
+          const csvPromise = new Promise<void>((resolveEntry, rejectEntry) => {
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) {
+                rejectEntry(err)
+                return
+              }
+              if (!readStream) {
+                resolveEntry()
+                return
+              }
+
+              const chunks: Buffer[] = []
+              readStream.on("data", (chunk: Buffer) => {
+                chunks.push(chunk)
+              })
+              readStream.on("end", () => {
+                const content = Buffer.concat(chunks).toString("utf-8")
+                csvContents.push(content)
+                resolveEntry()
+              })
+              readStream.on("error", rejectEntry)
+            })
+          })
+          csvPromises.push(csvPromise)
+        }
+        zipfile.readEntry()
+      })
+
+      zipfile.on("end", async () => {
+        if (csvCount === 0) {
+          reject(new Error("Keine CSV-Dateien im ZIP gefunden"))
+          return
+        }
+
+        try {
+          // Warte auf alle CSV-Dateien
+          await Promise.all(csvPromises)
+
+          // Kombiniere alle CSV-Inhalte (Header nur einmal, dann alle Datenzeilen)
+          const combined = csvContents
+            .map((content, index) => {
+              const lines = content.split("\n").filter((line) => line.trim())
+              if (index === 0) {
+                return lines.join("\n")
+              }
+              // Überspringe Header bei weiteren CSV-Dateien
+              return lines.slice(1).join("\n")
+            })
+            .filter((content) => content.length > 0)
+            .join("\n")
+
+          resolve(combined)
+        } catch (error) {
+          reject(error)
+        }
+      })
+
+      zipfile.on("error", reject)
+      zipfile.readEntry()
+    })
+  })
+}
+
 export async function fetchSellerboardCsv(account: AccountId, signal?: AbortSignal): Promise<string> {
   const config = SELLERBOARD_ACCOUNT_CONFIG[account]
   if (!config) {
@@ -345,6 +430,15 @@ export async function fetchSellerboardCsv(account: AccountId, signal?: AbortSign
       `Download für Account "${account}" fehlgeschlagen (Status ${response.status} ${response.statusText})`
     )
   }
+
+  const contentType = response.headers.get("content-type") || ""
+  const isZip = contentType.includes("application/zip") || contentType.includes("application/x-zip-compressed") || url.toLowerCase().endsWith(".zip")
+
+  if (isZip) {
+    const buffer = Buffer.from(await response.arrayBuffer())
+    return await extractCsvFromZip(buffer)
+  }
+
   return await response.text()
 }
 
@@ -354,6 +448,8 @@ export function parseSellerboardCsv(csvContent: string): ParseResult {
     skip_empty_lines: true,
     trim: true,
     bom: true,
+    relax_column_count: true, // Erlaubt Zeilen mit unterschiedlicher Spaltenanzahl
+    skip_records_with_error: true, // Überspringt fehlerhafte Zeilen statt Fehler zu werfen
   }) as Array<Record<string, unknown>>
 
   if (parsed.length === 0) {
