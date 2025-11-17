@@ -457,14 +457,25 @@ export function parseSellerboardCsv(csvContent: string): ParseResult {
   }
 
   const headers = Object.keys(parsed[0] ?? {})
+  // Erstelle ein case-insensitive Mapping der Header
+  const headerMapLower = new Map<string, string>()
+  headers.forEach((header) => {
+    headerMapLower.set(header.toLowerCase(), header)
+  })
+
   const headerMap = new Map<SellerboardColumnKey, string | null>()
   const missing = new Set<SellerboardColumnKey>()
 
   for (const column of COLUMN_DEFINITIONS) {
-    const foundHeader = column.headers.find((candidate) => headers.includes(candidate)) ?? null
-    headerMap.set(column.key, foundHeader)
+    // Suche case-insensitive nach passendem Header
+    const foundHeader = column.headers.find((candidate) => {
+      const candidateLower = candidate.toLowerCase()
+      return headerMapLower.has(candidateLower)
+    })
+    const actualHeader = foundHeader ? headerMapLower.get(foundHeader.toLowerCase()) ?? null : null
+    headerMap.set(column.key, actualHeader)
     // Nur required-Spalten als fehlend melden
-    if (!foundHeader && column.required) {
+    if (!actualHeader && column.required) {
       missing.add(column.key)
     }
   }
