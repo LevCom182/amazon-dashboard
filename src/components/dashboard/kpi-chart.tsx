@@ -160,9 +160,13 @@ function CustomTooltip({ active, payload, label, metrics, granularity = "daily" 
     })
     .filter(Boolean) as Array<{ label: string; color: string; value: string }>
 
+  const dateLabel = formatDateLabel(label, granularity)
+  const weekdayLabel = formatWeekdayLabel(label, granularity)
+
   return (
     <div className="rounded-md border bg-background px-3 py-2 shadow-md">
-      <div className="text-xs text-muted-foreground">{formatDateLabel(label, granularity)}</div>
+      <div className="text-xs text-muted-foreground">{dateLabel}</div>
+      {weekdayLabel && <div className="text-xs text-muted-foreground">{weekdayLabel}</div>}
       <div className="mt-1 space-y-1">
         {mapped.map((item) => (
           <div key={item.label} className="flex items-center gap-2 text-sm text-foreground">
@@ -208,6 +212,15 @@ function formatDateLabel(value?: string, granularity: "daily" | "weekly" = "dail
   }
   
   return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+}
+
+function formatWeekdayLabel(value?: string, granularity: "daily" | "weekly" = "daily") {
+  if (!value || granularity === "weekly") return null // Kein Wochentag für wöchentliche Ansicht
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  
+  const weekday = date.toLocaleDateString("de-DE", { weekday: "long" })
+  return weekday.charAt(0).toUpperCase() + weekday.slice(1) // Erster Buchstabe groß
 }
 
 // Funktion zur Berechnung der Kalenderwoche (ISO 8601)
