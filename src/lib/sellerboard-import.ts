@@ -443,11 +443,21 @@ export async function fetchSellerboardCsv(account: AccountId, signal?: AbortSign
 }
 
 export function parseSellerboardCsv(csvContent: string): ParseResult {
-  const parsed = parse(csvContent, {
+  // Entferne BOM und leere Zeilen (einschließlich Zeilen die nur "" enthalten) vor dem Parsing
+  let cleanedContent = csvContent.replace(/^\uFEFF/, '')
+  cleanedContent = cleanedContent
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trim()
+      return trimmed !== '' && trimmed !== '""' && trimmed !== '"\r"'
+    })
+    .join('\n')
+
+  const parsed = parse(cleanedContent, {
     columns: true,
     skip_empty_lines: true,
     trim: true,
-    bom: true,
+    bom: false, // BOM bereits manuell entfernt
     relax_column_count: true, // Erlaubt Zeilen mit unterschiedlicher Spaltenanzahl
     skip_records_with_error: true, // Überspringt fehlerhafte Zeilen statt Fehler zu werfen
   }) as Array<Record<string, unknown>>
