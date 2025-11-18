@@ -131,7 +131,7 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
   }, [filteredRecords, granularity])
   
   // Letzte 3 Tage + aktueller Monat extrahieren basierend auf Berliner Zeit
-  // "Gestern", "Vorgestern", "Vor 2 Tagen", "Aktueller Monat"
+  // "Gestern", "Vorgestern", "Vor 3 Tagen", "Aktueller Monat"
   // Verwendet immer tägliche Daten, unabhängig von der Diagramm-Granularität
   const lastThreeDays = useMemo(() => {
     const todayInBerlin = getTodayInBerlin()
@@ -158,7 +158,7 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
     const threeDaysAgoKey = formatDateKey(threeDaysAgo)
     
     // Hole Daten für die letzten 3 Tage, falls vorhanden
-    // Reihenfolge: Gestern, Vorgestern, Vor 2 Tagen
+    // Reihenfolge: Gestern, Vorgestern, Vor 3 Tagen
     const createEmptyPoint = (date: Date): typeof dailySeriesForTiles[0] => ({
       date: formatDateKey(date),
       revenue: 0,
@@ -343,10 +343,10 @@ export function DashboardView({ overall: _overall, accounts, records }: Dashboar
           </CardContent>
         </Card>
 
-        {/* 4 Kacheln: Gestern, Vorgestern, Vor 2 Tagen, Aktueller Monat */}
+        {/* 4 Kacheln: Gestern, Vorgestern, Vor 3 Tagen, Aktueller Monat */}
         <section className="grid gap-4 md:grid-cols-4">
           {lastThreeDays.map((dayData, index) => {
-            const dayLabels = ["Gestern", "Vorgestern", "Vor 2 Tagen"]
+            const dayLabels = ["Gestern", "Vorgestern", "Vor 3 Tagen"]
             const dayLabel = dayLabels[index] || `Tag ${index + 1}`
             return (
               <Card key={dayData.date} className="bg-card/60">
